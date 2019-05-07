@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/sivsivsree/grpc/todo"
+	"google.golang.org/grpc"
 	"os"
 	"strings"
 )
@@ -17,11 +18,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	var err error
+	conn, err := grpc.Dial(":8888", grpc.WithInsecure())
+
+	if err != nil {
+		fmt.Printf("Connection Failed %v", err)
+		os.Exit(0)
+	}
+
+	client := todo.NewTasksClient(conn)
+
 	switch flag.Arg(0) {
 
 	case "list":
-		err = list()
+
+		err = list(context.Background(), client)
 
 	case "add":
 		err = add(strings.Join(flag.Args()[1:], " "))
@@ -36,38 +46,29 @@ func main() {
 	}
 }
 
-const dbPath = "mydb.pb"
-
 func add(text string) error {
 
-	task := &todo.Task{
-		Text: text,
-		Done: false,
-	}
-
-	b, err := proto.Marshal(task)
-
-	if err != nil {
-		fmt.Errorf("Unable to encode protocol buffer")
-	}
-
-	f, err := os.OpenFile(dbPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-
-	if err != nil {
-		fmt.Errorf("Database cannot be found %s : %v", dbPath, err)
-	}
-
-	_, werr := f.Write(b)
-
-	if werr != nil {
-		fmt.Errorf("coudnt write to database %s : %v", dbPath, err)
-	}
-
-	f.Close()
-
-	return nil
+	return fmt.Errorf("Not implemented")
 }
 
-func list() error {
+func list(ctx context.Context, client todo.TasksClient) error {
+
+	l, err := client.List(ctx, &todo.Void{})
+
+	if err != nil {
+		fmt.Errorf("Coudnt fetch list %v", err)
+		return err
+	}
+
+	for _, t := range l.Tasks {
+		if t.Done {
+			fmt.Printf("👍")
+		} else {
+			fmt.Printf("👎")
+		}
+
+		fmt.Printf(" %s\n", t.Text)
+	}
+
 	return nil
 }

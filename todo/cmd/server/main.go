@@ -15,18 +15,22 @@ type taskServer struct {
 }
 
 func (ts taskServer) List(context.Context, *todo.Void) (*todo.TaskList, error) {
-
+	return nil, fmt.Errorf("Not Implemented yet")
 }
 
 func main() {
+
 	srv := grpc.NewServer()
+
 	var tasks taskServer
+
 	todo.RegisterTasksServer(srv, tasks)
 	l, err := net.Listen("tcp", ":8888")
 
 	if err != nil {
 		fmt.Errorf("TCP server failed. %v", err)
 	}
+
 	log.Fatal(srv.Serve(l))
 }
 
